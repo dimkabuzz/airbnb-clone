@@ -5,9 +5,11 @@ import { signOut } from "next-auth/react";
 import { User } from "@prisma/client";
 import { AiOutlineMenu } from "react-icons/ai";
 import Avatar from "@/app/components/Avatar";
-import MenuItem from "@/app/components/navbar/MenuItem";
+import MenuItem from "./MenuItem";
+
 import useLoginModalStore from "@/app/hooks/useLoginModalStore";
 import useRegisterModalStore from "@/app/hooks/useRegisterModalStore";
+import useRentModalStore from "@/app/hooks/useRentModalStore";
 
 type UserMenuProps = {
   currentUser?: User | null;
@@ -16,17 +18,28 @@ type UserMenuProps = {
 function UserMenu({ currentUser }: UserMenuProps) {
   const loginModalStore = useLoginModalStore();
   const registerModalStore = useRegisterModalStore();
+  const rentModalStore = useRentModalStore();
+
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleOpen = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
 
+  const onRent = useCallback(() => {
+    if (!currentUser) {
+      return loginModalStore.onOpen();
+    }
+
+    // Open rent modal
+    rentModalStore.onOpen();
+  }, [currentUser, loginModalStore, rentModalStore]);
+
   return (
     <div className="relative">
       <div className="flex flex-row items-center gap-3">
         <div
-          onClick={() => {}}
+          onClick={onRent}
           className="hidden md:block text-sm font-semibold py-3 px-4 rounded-full hover:bg-neutral-100 transition cursor-pointer"
         >
           Airbnb your home
@@ -53,7 +66,10 @@ function UserMenu({ currentUser }: UserMenuProps) {
                 <MenuItem onClick={() => {}} label="My favorites" />
                 <MenuItem onClick={() => {}} label="My reservations" />
                 <MenuItem onClick={() => {}} label="My properties" />
-                <MenuItem onClick={() => {}} label="Airbnb my home" />
+                <MenuItem
+                  onClick={rentModalStore.onOpen}
+                  label="Airbnb my home"
+                />
                 <hr />
                 <MenuItem onClick={signOut} label="Log out" />
               </>
