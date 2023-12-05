@@ -40,7 +40,12 @@ function ImageUpload({ onChange, value }: ImageUploadProps) {
 
             {value && (
               <div className="absolute inset-0 w-full h-full">
-                <Image alt="Upload" fill objectFit="cover" src={value} />
+                <Image
+                  alt="Upload"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  src={value}
+                />
               </div>
             )}
           </div>
