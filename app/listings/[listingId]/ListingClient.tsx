@@ -1,11 +1,26 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import { Listing, Reservation, User } from "@prisma/client";
+import { differenceInCalendarDays, eachDayOfInterval } from "date-fns";
+import { Range } from "react-date-range";
+
 import { categories } from "@/app/components/navbar/Categories";
 import Container from "@/app/components/Container";
 import ListingHead from "@/app/components/listings/ListingHead";
 import ListingInfo from "@/app/components/listings/ListingInfo";
+import ListingReservation from "@/app/components/listings/ListingReservation";
+
+import useLoginModalStore from "@/app/hooks/useLoginModalStore";
+
+const initialDateRange = {
+  startDate: new Date(),
+  endDate: new Date(),
+  key: "selection",
+};
 
 type ListingClientProps = {
   reservations?: Reservation[];
@@ -15,10 +30,86 @@ type ListingClientProps = {
   currentUser?: User | null;
 };
 
-function ListingClient({ listing, currentUser }: ListingClientProps) {
+function ListingClient({
+  reservations = [],
+  listing,
+  currentUser,
+}: ListingClientProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [totalPrice, setTotalPrice] = useState(listing.price);
+  const [dateRange, setDateRange] = useState<Range>(initialDateRange);
+
+  const loginModalStore = useLoginModalStore();
+  const router = useRouter();
+
+  const disabledDates = useMemo(() => {
+    let dates: Date[] = [];
+
+    reservations.forEach((reservation) => {
+      const range = eachDayOfInterval({
+        start: new Date(reservation.startDate),
+        end: new Date(reservation.endDate),
+      });
+
+      dates = [...dates, ...range];
+    });
+
+    return dates;
+  }, [reservations]);
+
   const category = useMemo(() => {
     return categories.find((item) => item.label === listing.category);
   }, [listing.category]);
+
+  const onCreateReservation = useCallback(() => {
+    if (!currentUser) {
+      return loginModalStore.onOpen();
+    }
+
+    setIsLoading(true);
+
+    axios
+      .post("/api/reservations", {
+        totalPrice,
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate,
+        listingId: listing?.id,
+      })
+      .then(() => {
+        toast.success("Listing reserved!");
+        setDateRange(initialDateRange);
+        // Redirect to /trips
+        router.refresh();
+      })
+      .catch(() => {
+        toast.error("Something went wrong!");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [
+    currentUser,
+    loginModalStore,
+    totalPrice,
+    dateRange,
+    listing?.id,
+    router,
+  ]);
+
+  useEffect(() => {
+    if (dateRange.startDate && dateRange.endDate) {
+      const dayCount = differenceInCalendarDays(
+        dateRange.endDate,
+        dateRange.startDate
+      );
+
+      if (dayCount && listing.price) {
+        setTotalPrice(dayCount * listing.price);
+      } else {
+        setTotalPrice(listing.price);
+      }
+    }
+  }, [listing.price, dateRange]);
 
   return (
     <Container>
@@ -42,6 +133,18 @@ function ListingClient({ listing, currentUser }: ListingClientProps) {
               bathroomCount={listing.bathroomCount}
               locationValue={listing.locationValue}
             />
+
+            <div className="order-first mb-10 md:order-last md:col-span-3">
+              <ListingReservation
+                price={listing.price}
+                totalPrice={totalPrice}
+                onChangeDate={(value) => setDateRange(value)}
+                dateRange={dateRange}
+                onSubmit={onCreateReservation}
+                disabled={isLoading}
+                disabledDates={disabledDates}
+              />
+            </div>
           </div>
         </div>
       </div>
