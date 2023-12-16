@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { User } from "@prisma/client";
 import { AiOutlineMenu } from "react-icons/ai";
@@ -16,6 +17,7 @@ type UserMenuProps = {
 };
 
 function UserMenu({ currentUser }: UserMenuProps) {
+  const router = useRouter();
   const loginModalStore = useLoginModalStore();
   const registerModalStore = useRegisterModalStore();
   const rentModalStore = useRentModalStore();
@@ -62,9 +64,18 @@ function UserMenu({ currentUser }: UserMenuProps) {
           <div className="flex flex-col cursor-pointer">
             {currentUser ? (
               <>
-                <MenuItem onClick={() => {}} label="My trips" />
-                <MenuItem onClick={() => {}} label="My favorites" />
-                <MenuItem onClick={() => {}} label="My reservations" />
+                <MenuItem
+                  onClick={() => router.push("/trips")}
+                  label="My trips"
+                />
+                <MenuItem
+                  onClick={() => router.push("/favorites")}
+                  label="My favorites"
+                />
+                <MenuItem
+                  onClick={() => router.push("/reservations")}
+                  label="My reservations"
+                />
                 <MenuItem onClick={() => {}} label="My properties" />
                 <MenuItem
                   onClick={rentModalStore.onOpen}
