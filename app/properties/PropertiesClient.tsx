@@ -3,19 +3,19 @@
 import axios from "axios";
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Reservation, User } from "@prisma/client";
+import { Listing, User } from "@prisma/client";
 import toast from "react-hot-toast";
 
 import Container from "@/app/components/Container";
 import Heading from "@/app/components/Heading";
 import ListingCard from "@/app/components/listings/ListingCard";
 
-type TripsClientProps = {
-  reservations: Reservation[];
+type PropertiesClientProps = {
+  listings: Listing[];
   currentUser?: User | null;
 };
 
-function TripsClient({ reservations, currentUser }: TripsClientProps) {
+function PropertiesClient({ listings, currentUser }: PropertiesClientProps) {
   const router = useRouter();
   const [deletingId, setDeletingId] = useState("");
 
@@ -24,9 +24,9 @@ function TripsClient({ reservations, currentUser }: TripsClientProps) {
       setDeletingId(id);
 
       axios
-        .delete(`/api/reservations/${id}`)
+        .delete(`/api/listings/${id}`)
         .then(() => {
-          toast.success("Reservation cancelled");
+          toast.success("Listing deleted");
           router.refresh();
         })
         .catch((error) => {
@@ -41,22 +41,17 @@ function TripsClient({ reservations, currentUser }: TripsClientProps) {
 
   return (
     <Container>
-      <Heading
-        title="Trips"
-        subtitle="Where you've been and where you're going"
-      />
+      <Heading title="Properties" subtitle="List of your properties." />
 
       <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8">
-        {reservations.map((reservation) => (
+        {listings.map((listing) => (
           <ListingCard
-            key={reservation.id}
-            // @ts-ignore
-            data={reservation.listing}
-            reservation={reservation}
-            actionId={reservation.id}
+            key={listing.id}
+            data={listing}
+            actionId={listing.id}
             onAction={onCancel}
-            actionLabel="Cancel reservation"
-            disabled={deletingId === reservation.id}
+            actionLabel="Delete property"
+            disabled={deletingId === listing.id}
             currentUser={currentUser}
           />
         ))}
@@ -64,4 +59,4 @@ function TripsClient({ reservations, currentUser }: TripsClientProps) {
     </Container>
   );
 }
-export default TripsClient;
+export default PropertiesClient;
